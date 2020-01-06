@@ -1,0 +1,2 @@
+cd ../native
+AzureKinectRPGFinal.exe
