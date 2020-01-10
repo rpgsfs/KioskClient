@@ -11,22 +11,35 @@ let childProcess = false;
 function loadViewerExtensions(win, extensions) {
   console.log('loading ' + extensions + ' on ' + win)
   win.webContents.executeJavaScript(
-    '_rpgsfs_ei_extensions = ' + JSON.stringify(extensions)
+    'viewerExtensions.push(...' + JSON.stringify(extensions) + ')'
   )
 }
 
-function start() {
+function setPod(win, pod) {
+  win.webContents.executeJavaScript(
+    '_rpgsfs_ei_pod = ' + JSON.stringify(pod)
+  );
+}
 
+function start() {
   // create the windows and have them load the website
 
   let baseURL = 'http://localHost:50717/'
 
   let selectorWindow = createWindow(1, 'viewerPreload.js')
   selectorWindow.loadURL(baseURL)
+  loadViewerExtensions(selectorWindow, [
+    'RPGSFS.Arpoge.Sound'
+  ]);
 
   let sideWindow1 = createWindow(2, 'viewerPreload.js')
+  setPod(sideWindow1, 5)
+
   let viewerWindow = createWindow(3, 'viewerPreload.js')
+  setPod(viewerWindow, 0)
+
   let sideWindow2 = createWindow(4, 'viewerPreload.js')
+  setPod(sideWindow2, 1)
 
   for (let win of [sideWindow1, viewerWindow, sideWindow2]) {
     win.loadURL(baseURL + 'viewer.html');
@@ -36,32 +49,6 @@ function start() {
     ]);
   }
 
-  // set up the position and orientation of the virtual windows and virtual
-  // kinects to match the real world
-
-  let monitorWidth = 940;
-
-  let kinectX = monitorWidth * 3 / 4;
-  let kinectY = 0;
-  let kinectZ = monitorWidth * Math.sqrt(3) / 4;
-
-  let sideX = 8 * 3 / 4;
-  let sideY = 8 * Math.sqrt(3) / 4;
-
-  setViewerSettings(sideWindow1, {
-    windowPos: {x: -sideX, y: sideY, z: 0},
-    windowTarget: {x: 0, y: 0, z: 0},
-    kinectPos: {x: kinectX, y: kinectY, z: kinectZ},
-    kinectLook: {x: 0, y: .5, z: 0, w: Math.sqrt(3) / 2}
-  });
-
-  setViewerSettings(sideWindow2, {
-    windowPos: {x: sideX, y: sideY, z: 0},
-    windowTarget: {x: 0, y: 0, z: 0},
-    kinectPos: {x: -kinectX, y: kinectY, z: kinectZ},
-    kinectLook: {x: 0, y: -.5, z: 0, w: Math.sqrt(3) / 2}
-  });
-
   connectViews(
     selectorWindow,
     [viewerWindow, sideWindow1, sideWindow2],
@@ -70,16 +57,6 @@ function start() {
   );
 
   childProcess = linkToKinect([viewerWindow, sideWindow1, sideWindow2]);
-}
-
-// Overrides the default settings for the position and orientation of the
-// virtual window and virtual kinect within the virtual world
-function setViewerSettings(viewer, settings) {
-  viewer.webContents.executeJavaScript(
-    'if (!window["_rpgsfs_viewer_settings"])\n' +
-    ' _rpgsfs_viewer_settings = {};\n' +
-    'Object.assign(_rpgsfs_viewer_settings, ' + JSON.stringify(settings) + ');'
-  );
 }
 
 // Creates a fullscreen window on the given screen and then loads the given
@@ -120,12 +97,12 @@ function connectViews(selectorWindow, viewersToLaunch, outerModelViewers, innerM
             case 'Loading Outer Model':
               // "Loading Outer Model [urn]:[viewableid]" was printed
               for (let window of outerModelViewers)
-                window.webContents.executeJavaScript('loadOuterModel' + params)
+                window.webContents.executeJavaScript('viewer.getExtension("RPGSFS.Arpoge.ModelManagement").loadOuterModel' + params)
               break
             case 'Loading Inner Model':
               // "Loading Inner Model [urn]:[viewableid]" was printed
               for (let window of innerModelViewers)
-                window.webContents.executeJavaScript('loadInnerModel' + params)
+                window.webContents.executeJavaScript('viewer.getExtension("RPGSFS.Arpoge.ModelManagement").loadInnerModel' + params)
               break
           }
         }
