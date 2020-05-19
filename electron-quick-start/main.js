@@ -10,15 +10,14 @@ let childProcess = false;
 // in the given window
 function loadViewerExtensions(win, extensions) {
   console.log('loading ' + extensions + ' on ' + win)
+
   win.webContents.executeJavaScript(
     'viewerExtensions.push(...' + JSON.stringify(extensions) + ')'
   )
 }
 
 function setPod(win, pod) {
-  win.webContents.executeJavaScript(
-    '_rpgsfs_ei_pod = ' + JSON.stringify(pod)
-  );
+  win.webContents.send('pod', pod);
 }
 
 function start() {
@@ -119,6 +118,7 @@ function linkToKinect(viewers) {
   // Buffer to store incoming data from the standard out stream of the script
   var stdOutBuffer = "";
   child.stdout.on('data', data => {
+    data = ("" + data).trim();
     // Append the new data to the end of the buffer
     stdOutBuffer = stdOutBuffer.concat(data);
 
@@ -130,12 +130,10 @@ function linkToKinect(viewers) {
       // Pop out the beginning of the buffer, up to the first tag
       var command = parts.splice(0, 2);
 
-      // Anything preceding an _END_ tag is treated as data and passed to the
-      // viewers
+      //Anything preceding an _END_ tag is treated as data and passed to the viewers
       if ('_END_' == command[1])
         for (let viewer of viewers)
-          viewer.webContents
-            .executeJavaScript("_rpgsfs_ei_acceptData('" + command[0] + "')")
+          viewer.webContents.send('kinectData', command[0]);
 
       // _KEEPALIVE_ tags are removed, and the data preceding them is joined
       // with the data after them to be reprocessed

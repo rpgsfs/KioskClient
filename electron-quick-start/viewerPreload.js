@@ -1,4 +1,15 @@
+const {ipcRenderer} = require('electron');
+
+ipcRenderer.on('foo', (sender, data) => {
+  console.log(data);
+});
+
+ipcRenderer.on('pod', (sender, data) => {
+  _rpgsfs_ei_pod = data;
+});
+
 window.addEventListener('DOMContentLoaded', () => {
+
   //wait for the viewer to be launched
   onViewerLaunch.push(viewer => {
     const extension = 'RPGSFS.Arpoge.HeadTracking';
@@ -31,7 +42,7 @@ function _rpgsfs_ei_kinectToForgeCoordinates(x, y, z) {
 
 let _rpgsfs_ei_manipulate_hands_start = undefined;
 
-function _rpgsfs_ei_acceptData(data) {
+ipcRenderer.on('kinectData', (sender, data) => {
   try {
       let command = data.split(' ');
       let commandKeyword = command.shift();
@@ -42,8 +53,8 @@ function _rpgsfs_ei_acceptData(data) {
         viewControls = viewer.getExtension('RPGSFS.Arpoge.ViewControls');
         headTracking = viewer.getExtension('RPGSFS.Arpoge.HeadTracking');
       } catch (e) {
-      	if (!e instanceof ReferenceError)
-      		throw e;
+        if (!e instanceof ReferenceError)
+          throw e;
         //if viewer has not been defined
         //leave viewControls and headTracking undefined
       }
@@ -53,7 +64,8 @@ function _rpgsfs_ei_acceptData(data) {
           if (headTracking)
           {
             // alert('tracking head');
-            cords = _rpgsfs_ei_kinectToForgeCoordinates(...cords);
+            let coords = command.map(Number.parseFloat);
+            coords = _rpgsfs_ei_kinectToForgeCoordinates(...coords);
             headTracking.setObserverPosition(...coords);
           }
           break;
@@ -109,4 +121,4 @@ function _rpgsfs_ei_acceptData(data) {
   catch (e) {
     alert(e);
   }
-}
+});
