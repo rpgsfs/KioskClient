@@ -37,6 +37,12 @@ function _rpgsfs_ei_kinectToForgeCoordinates(x, y, z) {
 }
 
 let _rpgsfs_ei_manipulate_hands_start = undefined;
+// the last n head positions recoreded by the kinect
+let lastn = [];
+// the number of head positions to average at a time
+const n = 20;
+// the index of the oldest entry in lastn
+let i = 0;
 
 ipcRenderer.on('kinectData', (sender, data) => {
   try {
@@ -59,10 +65,16 @@ ipcRenderer.on('kinectData', (sender, data) => {
         case '_HEADPOSITION_':
           if (headTracking)
           {
-            // alert('tracking head');
             let coords = command.map(Number.parseFloat);
             coords = _rpgsfs_ei_kinectToForgeCoordinates(...coords);
-            headTracking.setObserverPosition(...coords);
+            lastn[i++] = coords;
+            i %= n;
+            // coordsAvg is an array containing an avarage of the head position 
+            // coordinates
+            const coordsAvg = (lastn.reduce(
+              (acc, cur) => cur.map((curr, x) => acc[x] + curr)))
+              .map((v) => v / lastn.length);
+            headTracking.setObserverPosition(...coordsAvg);
           }
           break;
 
