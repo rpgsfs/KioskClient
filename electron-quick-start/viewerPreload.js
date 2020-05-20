@@ -1,9 +1,5 @@
 const {ipcRenderer} = require('electron');
 
-ipcRenderer.on('foo', (sender, data) => {
-  console.log(data);
-});
-
 ipcRenderer.on('pod', (sender, data) => {
   _rpgsfs_ei_pod = data;
 });

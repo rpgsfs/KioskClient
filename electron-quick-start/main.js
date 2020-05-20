@@ -10,7 +10,6 @@ let childProcess = false;
 // in the given window
 function loadViewerExtensions(win, extensions) {
   console.log('loading ' + extensions + ' on ' + win)
-
   win.webContents.executeJavaScript(
     'viewerExtensions.push(...' + JSON.stringify(extensions) + ')'
   )
