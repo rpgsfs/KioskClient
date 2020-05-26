@@ -40,9 +40,14 @@ let _rpgsfs_ei_manipulate_hands_start = undefined;
 // the last n head positions recoreded by the kinect
 let lastn = [];
 // the number of head positions to average at a time
-const n = 20;
+const n = 80;
 // the index of the oldest entry in lastn
 let i = 0;
+
+// will only allow the display to update a certain number of times per second
+const updatesPerSec = 20;
+const updateDelay = 1000 / updatesPerSec;
+let t0 = 0;
 
 ipcRenderer.on('kinectData', (sender, data) => {
   try {
@@ -70,11 +75,15 @@ ipcRenderer.on('kinectData', (sender, data) => {
             lastn[i++] = coords;
             i %= n;
             // coordsAvg is an array containing an avarage of the head position 
-            // coordinates
+            // coordinates (x, y, z)
             const coordsAvg = (lastn.reduce(
               (acc, cur) => cur.map((curr, x) => acc[x] + curr)))
               .map((v) => v / lastn.length);
-            headTracking.setObserverPosition(...coordsAvg);
+            const t1 = window.performance.now();
+            if(t1 - t0 >= updateDelay) {
+              headTracking.setObserverPosition(...coordsAvg);
+              t0 = t1;
+            }
           }
           break;
 
