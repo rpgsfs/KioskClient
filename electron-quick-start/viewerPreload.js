@@ -37,17 +37,11 @@ function _rpgsfs_ei_kinectToForgeCoordinates(x, y, z) {
 }
 
 let _rpgsfs_ei_manipulate_hands_start = undefined;
-// the last n head positions recoreded by the kinect
-let lastn = [];
-// the number of head positions to average at a time
-const n = 80;
-// the index of the oldest entry in lastn
-let i = 0;
 
-// will only allow the display to update a certain number of times per second
-const updatesPerSec = 20;
-const updateDelay = 1000 / updatesPerSec;
-let t0 = 0;
+// the minimum number of units the user needs to move their head for the 
+// program to attempt to update the UI
+const headMoveThreshold = 2;
+const currentHeadPos = [0, 0, 0];
 
 ipcRenderer.on('kinectData', (sender, data) => {
   try {
@@ -71,18 +65,30 @@ ipcRenderer.on('kinectData', (sender, data) => {
           if (headTracking)
           {
             let coords = command.map(Number.parseFloat);
-            coords = _rpgsfs_ei_kinectToForgeCoordinates(...coords);
-            lastn[i++] = coords;
-            i %= n;
-            // coordsAvg is an array containing an avarage of the head position 
-            // coordinates (x, y, z)
-            const coordsAvg = (lastn.reduce(
-              (acc, cur) => cur.map((curr, x) => acc[x] + curr)))
-              .map((v) => v / lastn.length);
-            const t1 = window.performance.now();
-            if(t1 - t0 >= updateDelay) {
-              headTracking.setObserverPosition(...coordsAvg);
-              t0 = t1;
+
+            let update = false;
+            if(Math.abs(currentHeadPos[0] - coords[0]) > headMoveThreshold) {
+              console.log('updating x current = %f new = %f', currentHeadPos[0], 
+                coords[0]);
+              update = true;
+              currentHeadPos[0] = coords[0];
+            }
+            if(Math.abs(currentHeadPos[1] - coords[1]) > headMoveThreshold) {
+              console.log('updating y current = %f new = %f', currentHeadPos[1], 
+                coords[1]);
+              update = true;
+              currentHeadPos[1] = coords[1];
+            }
+            if(Math.abs(currentHeadPos[2] - coords[2]) > headMoveThreshold) {
+              console.log('updating z current = %f new = %f', currentHeadPos[2], 
+                coords[2]);
+              update = true;
+              currentHeadPos[2] = coords[2];
+            }
+
+            if(update) {
+              coords = _rpgsfs_ei_kinectToForgeCoordinates(...coords);
+              headTracking.setObserverPosition(...coords);
             }
           }
           break;
