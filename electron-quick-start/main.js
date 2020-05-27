@@ -3,6 +3,7 @@ const {app, BrowserWindow} = require('electron')
 const path = require('path')
 const { spawn } = require('child_process')
 const killProc = require('tree-kill')
+const fs = require('fs');
 
 let childProcess = false;
 
@@ -161,7 +162,10 @@ app.on('ready', start)
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function () {
-  if (childProcess)
-    killProc(childProcess.pid, 'SIGHUP', console.log)
+  if(childProcess) killProc(childProcess.pid, 'SIGHUP', console.log);
   app.quit();
 })
+
+process.on('uncaughtException', (err, origin) => {
+  fs.writeSync(process.stdout.fd, `stack = ${err.stack}`);
+});
