@@ -38,6 +38,11 @@ function _rpgsfs_ei_kinectToForgeCoordinates(x, y, z) {
 
 let _rpgsfs_ei_manipulate_hands_start = undefined;
 
+// the minimum number of units the user needs to move their head for the 
+// program to attempt to update the UI
+const headMoveThreshold = 2;
+const currentHeadPos = [0, 0, 0];
+
 ipcRenderer.on('kinectData', (sender, data) => {
   try {
       let command = data.split(' ');
@@ -59,10 +64,32 @@ ipcRenderer.on('kinectData', (sender, data) => {
         case '_HEADPOSITION_':
           if (headTracking)
           {
-            // alert('tracking head');
             let coords = command.map(Number.parseFloat);
-            coords = _rpgsfs_ei_kinectToForgeCoordinates(...coords);
-            headTracking.setObserverPosition(...coords);
+
+            let update = false;
+            if(Math.abs(currentHeadPos[0] - coords[0]) > headMoveThreshold) {
+              console.log('updating x current = %f new = %f', currentHeadPos[0], 
+                coords[0]);
+              update = true;
+              currentHeadPos[0] = coords[0];
+            }
+            if(Math.abs(currentHeadPos[1] - coords[1]) > headMoveThreshold) {
+              console.log('updating y current = %f new = %f', currentHeadPos[1], 
+                coords[1]);
+              update = true;
+              currentHeadPos[1] = coords[1];
+            }
+            if(Math.abs(currentHeadPos[2] - coords[2]) > headMoveThreshold) {
+              console.log('updating z current = %f new = %f', currentHeadPos[2], 
+                coords[2]);
+              update = true;
+              currentHeadPos[2] = coords[2];
+            }
+
+            if(update) {
+              coords = _rpgsfs_ei_kinectToForgeCoordinates(...coords);
+              headTracking.setObserverPosition(...coords);
+            }
           }
           break;
 
